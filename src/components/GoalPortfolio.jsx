@@ -1,11 +1,12 @@
 import React from 'react';
-import { Target, TrendingUp, Plus, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
+import { Target, TrendingUp, Plus, ArrowRight, ShieldCheck, Clock, Trash2 } from 'lucide-react';
 
 export default function GoalPortfolio({
   challenges,
   activeId,
   onSelectGoal,
-  onOpenCreate
+  onOpenCreate,
+  onDeleteGoal
 }) {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-28">
@@ -36,8 +37,7 @@ export default function GoalPortfolio({
           return (
             <div
               key={ch.id}
-              onClick={() => onSelectGoal(ch.id)}
-              className={`group relative rounded-3xl p-6 border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+              className={`group relative rounded-3xl p-6 border transition-all duration-200 flex flex-col justify-between ${
                 isCurrent
                   ? 'bg-gradient-to-b from-slate-900 via-slate-900 to-[#0A121A] border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
                   : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'
@@ -48,19 +48,40 @@ export default function GoalPortfolio({
                   <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80">
                     {ch.category || 'Savings Target'}
                   </span>
-                  {isCurrent && (
-                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                      Active View
-                    </span>
-                  )}
+                  
+                  <div className="flex items-center gap-2">
+                    {isCurrent && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                        Active
+                      </span>
+                    )}
+
+                    {/* Direct Delete Goal Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteGoal(ch.id);
+                      }}
+                      title="Delete this goal"
+                      className="w-7 h-7 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
-                  {ch.title}
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-1">
-                  {ch.subtitle || `${ch.durationValue} ${ch.durationUnit}`}
-                </p>
+                <div 
+                  onClick={() => onSelectGoal(ch.id)}
+                  className="cursor-pointer"
+                >
+                  <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
+                    {ch.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-1">
+                    {ch.subtitle || `${ch.durationValue} ${ch.durationUnit}`}
+                  </p>
+                </div>
 
                 {/* Amounts display */}
                 <div className="flex items-baseline justify-between mt-5 pt-4 border-t border-slate-800/80">
@@ -94,7 +115,10 @@ export default function GoalPortfolio({
               </div>
 
               {/* Action link */}
-              <div className="mt-6 flex items-center justify-between pt-4 border-t border-slate-800/80 text-xs font-bold text-slate-400 group-hover:text-emerald-400 transition-colors">
+              <div 
+                onClick={() => onSelectGoal(ch.id)}
+                className="mt-6 flex items-center justify-between pt-4 border-t border-slate-800/80 text-xs font-bold text-slate-400 group-hover:text-emerald-400 transition-colors cursor-pointer"
+              >
                 <span>View & Track Progress</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -114,7 +138,7 @@ export default function GoalPortfolio({
             Create Another Goal
           </span>
           <span className="text-xs text-slate-400 max-w-[200px] mt-1">
-            Vacation, Tech upgrade, House downpayment, or Emergency reserve
+            Vacation, Pocket Money, Tech upgrade, or Emergency reserve
           </span>
         </button>
       </div>

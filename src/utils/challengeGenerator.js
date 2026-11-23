@@ -11,10 +11,6 @@ export const CURRENCY_SYMBOLS = [
   { code: 'AUD', symbol: 'A$', label: 'AUD ($)' },
 ];
 
-/**
- * Clean Starter Goals with ZERO pre-marked demo items
- * Every single installment starts as pending so the user starts fresh.
- */
 export const INITIAL_PRESETS = [
   {
     id: 'goal-20k-starter',
@@ -33,22 +29,100 @@ export const INITIAL_PRESETS = [
       periods: 12,
       durationUnit: 'months',
       strategy: 'equal',
-      premarkedCount: 0 // NO demo items marked!
+      premarkedCount: 0
     })
   }
 ];
+
+/**
+ * Distribute an exact amount across N slots with strict [min, max] bounds
+ */
+function distributeWithBounds(target, periods, minBound, maxBound) {
+  const min = Math.max(1, Math.round(minBound));
+  const max = Math.max(min, Math.round(maxBound));
+  let safeTarget = Math.max(periods * min, Math.min(periods * max, target));
+
+  // Determine rounding unit (10, 5, or 1)
+  const range = max - min;
+  const stepUnit = range >= 20 ? 10 : range >= 10 ? 5 : 1;
+
+  // Round safeTarget to be compatible with stepUnit
+  safeTarget = Math.round(safeTarget / stepUnit) * stepUnit;
+  if (safeTarget < periods * min) safeTarget = periods * min;
+  if (safeTarget > periods * max) safeTarget = periods * max;
+
+  let remaining = safeTarget - (periods * min);
+  const result = new Array(periods).fill(min);
+
+  for (let i = 0; i < periods; i++) {
+    const slotsLeft = periods - 1 - i;
+    if (slotsLeft === 0) {
+      result[i] += remaining;
+      break;
+    }
+
+    const maxAddForThisSlot = Math.min(max - min, remaining);
+    const minAddForThisSlot = Math.max(0, remaining - (slotsLeft * (max - min)));
+
+    if (maxAddForThisSlot <= minAddForThisSlot) {
+      result[i] += minAddForThisSlot;
+      remaining -= minAddForThisSlot;
+    } else {
+      // Pick random step between minAdd and maxAdd
+      const rawDelta = Math.random() * (maxAddForThisSlot - minAddForThisSlot) + minAddForThisSlot;
+      let step = Math.round(rawDelta / stepUnit) * stepUnit;
+      step = Math.max(minAddForThisSlot, Math.min(maxAddForThisSlot, step));
+      result[i] += step;
+      remaining -= step;
+    }
+  }
+
+  // Shuffle the result so higher/lower values are scattered naturally
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
 
 export function generateChronologicalItems({
   targetAmount,
   periods,
   durationUnit,
   strategy,
+  customLimits = null, // { enabled: true, min: 10, max: 30 }
   premarkedCount = 0,
   randomSeed = 0
 }) {
   const items = [];
   const baseDate = new Date();
   const unitLabel = durationUnit === 'weeks' ? 'Week' : durationUnit === 'months' ? 'Month' : 'Day';
+
+  // Check if Pocket Limits (min/max cap) is enabled
+  if (customLimits && customLimits.enabled && customLimits.max > 0) {
+    const minVal = Math.max(1, Number(customLimits.min) || 10);
+    const maxVal = Math.max(minVal, Number(customLimits.max) || 30);
+    const amounts = distributeWithBounds(targetAmount, periods, minVal, maxVal);
+
+    for (let i = 1; i <= periods; i++) {
+      const amt = amounts[i - 1] || minVal;
+      const dueDate = computeDueDate(baseDate, i - 1, durationUnit);
+      const isSaved = i <= premarkedCount;
+
+      items.push({
+        id: `item-${i}`,
+        label: `${unitLabel} ${i}`,
+        amount: amt,
+        dueDate: dueDate.toISOString().split('T')[0],
+        saved: isSaved,
+        savedAt: isSaved ? dueDate.toISOString().split('T')[0] : null,
+        note: ''
+      });
+    }
+
+    return items;
+  }
 
   if (strategy === 'equal') {
     const baseAmount = Math.floor(targetAmount / periods);
@@ -98,13 +172,13 @@ export function generateChronologicalItems({
     }
   } else if (strategy === 'bubble_matrix') {
     const count = periods;
-    const denoms = [20, 30, 50, 75, 100, 150, 200, 250, 500];
+    const denoms = [10, 20, 25, 30, 50, 75, 100, 150, 200, 250, 500];
     const avg = targetAmount / count;
     let accumulated = 0;
 
     for (let i = 1; i <= count; i++) {
       if (i === count) {
-        const amt = Math.max(10, targetAmount - accumulated);
+        const amt = Math.max(5, targetAmount - accumulated);
         items.push({
           id: `tile-${i}`,
           label: `Tile ${i}`,
@@ -135,7 +209,7 @@ export function generateChronologicalItems({
       });
     }
 
-    // Exact balance
+    // Exact balance pass
     const currentSum = items.reduce((acc, it) => acc + it.amount, 0);
     const diff = targetAmount - currentSum;
     if (items.length > 0) {
@@ -161,11 +235,9 @@ export function generateChronologicalItems({
 
       const slotsLeft = periods - i;
       const slotBudget = remainingTarget / (slotsLeft + 1);
-      // Random variance between 0.4x and 1.6x of the slot budget
       const randomFactor = 0.4 + (Math.random() * 1.2);
       let chosen = Math.round((slotBudget * randomFactor) / 10) * 10;
       
-      // Ensure remaining slots have at least 10 each
       chosen = Math.min(remainingTarget - (slotsLeft * 10), Math.max(10, chosen));
       remainingTarget -= chosen;
 
@@ -209,6 +281,7 @@ export function generateCustomChallenge({
   durationValue = 12,
   durationUnit = 'months',
   strategy = 'equal',
+  customLimits = null, // { enabled: true, min: 10, max: 30 }
   randomSeed = 0
 }) {
   const target = Math.max(10, Math.round(Number(targetAmount) || 1000));
@@ -219,6 +292,7 @@ export function generateCustomChallenge({
     periods,
     durationUnit,
     strategy,
+    customLimits,
     premarkedCount: 0,
     randomSeed
   });
@@ -226,7 +300,9 @@ export function generateCustomChallenge({
   const periodInfo = getDualPeriodInfo(periods, durationUnit, target, currency);
   let subtitle = '';
 
-  if (strategy === 'equal') {
+  if (customLimits && customLimits.enabled) {
+    subtitle = `${periodInfo.badgeText} • Pocket Cap ${currency}${customLimits.min}–${currency}${customLimits.max} per ${durationUnit.slice(0, -1)}`;
+  } else if (strategy === 'equal') {
     subtitle = `${periodInfo.badgeText} • ${periodInfo.rateComparison}`;
   } else {
     const amounts = items.map(it => it.amount);
@@ -246,6 +322,7 @@ export function generateCustomChallenge({
     durationValue: periods,
     durationUnit,
     strategy,
+    customLimits,
     subtitle,
     startDate: new Date().toISOString().split('T')[0],
     finishDate: finalDate,

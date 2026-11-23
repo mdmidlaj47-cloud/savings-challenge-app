@@ -10,6 +10,7 @@ import {
   MoreVertical,
   Download,
   Palette,
+  Bell,
   Sparkles
 } from 'lucide-react';
 import { THEMES } from '../utils/themes';
@@ -24,6 +25,8 @@ export default function Navbar({
   onSelectTheme,
   currentTheme,
   onOpenCreate,
+  onOpenNotifications,
+  hasDueNotifications = false,
   onResetGoal,
   onDeleteGoal,
 }) {
@@ -76,10 +79,10 @@ export default function Navbar({
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <div className="text-left">
                 <span className="block font-bold text-white max-w-[130px] sm:max-w-[200px] truncate leading-tight">
-                  {activeChallenge?.title || 'No Goal Selected'}
+                  {activeChallenge?.title || 'No Goal (Tap + to Create)'}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
-                  {activeChallenge ? `${activeChallenge.currency}${activeChallenge.targetAmount?.toLocaleString()}` : ''}
+                  {activeChallenge ? `${activeChallenge.currency}${activeChallenge.targetAmount?.toLocaleString()}` : '0 active'}
                 </span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
@@ -89,8 +92,9 @@ export default function Navbar({
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
                 <div className="absolute left-0 mt-2 w-72 bg-[#0F1522] border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Your Savings Portfolios
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center">
+                    <span>Your Savings Goals</span>
+                    <span className="text-slate-500 font-mono">{challenges.length}</span>
                   </div>
                   <div className="max-h-64 overflow-y-auto px-1">
                     {challenges.map(ch => {
@@ -98,28 +102,48 @@ export default function Navbar({
                       const saved = ch.items.filter(it => it.saved).reduce((a, b) => a + b.amount, 0);
                       const pct = Math.round((saved / ch.targetAmount) * 100) || 0;
                       return (
-                        <button
+                        <div
                           key={ch.id}
-                          onClick={() => {
-                            onSelectGoal(ch.id);
-                            setDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-2.5 rounded-xl text-left text-xs flex items-center justify-between transition-colors my-0.5 ${
+                          className={`w-full px-2.5 py-2 rounded-xl text-xs flex items-center justify-between transition-colors my-0.5 group ${
                             isCurrent
                               ? 'bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20'
                               : 'text-slate-300 hover:bg-slate-800/60'
                           }`}
                         >
-                          <div className="truncate pr-2">
+                          <button
+                            onClick={() => {
+                              onSelectGoal(ch.id);
+                              setDropdownOpen(false);
+                            }}
+                            className="text-left flex-1 truncate pr-2"
+                          >
                             <span className="block font-medium truncate text-white">{ch.title}</span>
-                            <span className="text-[10px] text-slate-400">{ch.category || 'Goal'} • {pct}% saved</span>
-                          </div>
-                          <span className="text-xs font-mono font-bold text-slate-300">
-                            {ch.currency}{ch.targetAmount.toLocaleString()}
-                          </span>
-                        </button>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {ch.currency}{ch.targetAmount.toLocaleString()} • {pct}% saved
+                            </span>
+                          </button>
+
+                          {/* Quick delete from dropdown */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteGoal(ch.id);
+                            }}
+                            title="Delete this goal"
+                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg opacity-60 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       );
                     })}
+
+                    {challenges.length === 0 && (
+                      <div className="p-3 text-center text-xs text-slate-500">
+                        No goals yet.
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-2 border-t border-slate-800/80 mt-1">
@@ -142,6 +166,18 @@ export default function Navbar({
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Notifications / Reminders Button */}
+          <button
+            onClick={onOpenNotifications}
+            title="Savings Reminders & Notifications"
+            className="relative w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
+          >
+            <Bell className="w-4 h-4 text-slate-300 hover:text-white" />
+            {hasDueNotifications && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#090D14] animate-pulse" />
+            )}
+          </button>
+
           {/* Palette / Theme Switcher */}
           <div className="relative">
             <button
@@ -234,17 +270,21 @@ export default function Navbar({
                     <Download className="w-4 h-4 text-slate-400" />
                     Export Backup (JSON)
                   </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onResetGoal();
-                    }}
-                    className="w-full px-3.5 py-2.5 text-left text-xs text-amber-400 hover:bg-amber-400/10 flex items-center gap-2.5"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset Progress
-                  </button>
-                  {challenges.length > 1 && (
+
+                  {activeChallenge && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onResetGoal();
+                      }}
+                      className="w-full px-3.5 py-2.5 text-left text-xs text-amber-400 hover:bg-amber-400/10 flex items-center gap-2.5"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Reset Progress
+                    </button>
+                  )}
+
+                  {activeChallenge && (
                     <button
                       onClick={() => {
                         setMenuOpen(false);

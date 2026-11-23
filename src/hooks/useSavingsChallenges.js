@@ -4,6 +4,13 @@ import { INITIAL_PRESETS, generateCustomChallenge } from '../utils/challengeGene
 import { getDualPeriodInfo } from '../utils/periodConverter';
 import { THEMES } from '../utils/themes';
 import { playPopSound, playUntickSound, playSuccessChime, playMilestoneFanfare } from '../utils/audio';
+import { 
+  getNotificationSettings, 
+  saveNotificationSettings, 
+  sendLocalNotification, 
+  checkDueInstallments,
+  requestNotificationPermission 
+} from '../utils/notifications';
 
 const STORAGE_KEY = 'vaultcraft_savings_goals_v3';
 const SOUND_KEY = 'vaultcraft_sound_pref';
@@ -15,7 +22,7 @@ export function useSavingsChallenges() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
@@ -41,6 +48,7 @@ export function useSavingsChallenges() {
     return pref && THEMES[pref] ? pref : 'emerald';
   });
 
+  const [notificationSettings, setNotifSettingsState] = useState(getNotificationSettings);
   const [celebration, setCelebration] = useState(null);
 
   // Sync to localStorage
@@ -62,11 +70,66 @@ export function useSavingsChallenges() {
     } catch (e) {}
   }, [themeId]);
 
+  // Keep activeId valid if challenges change
+  useEffect(() => {
+    if (challenges.length > 0 && (!activeId || !challenges.some(c => c.id === activeId))) {
+      setActiveId(challenges[0].id);
+    } else if (challenges.length === 0) {
+      setActiveId('');
+    }
+  }, [challenges, activeId]);
+
   const activeChallenge = useMemo(() => {
     return challenges.find(c => c.id === activeId) || challenges[0] || null;
   }, [challenges, activeId]);
 
   const currentTheme = THEMES[themeId] || THEMES.emerald;
+
+  // Check due installments today
+  const dueTodayInstallments = useMemo(() => {
+    return checkDueInstallments(challenges);
+  }, [challenges]);
+
+  // Periodic notification check when enabled
+  useEffect(() => {
+    if (!notificationSettings.enabled || dueTodayInstallments.length === 0) return;
+
+    // Check if we already notified today
+    const lastNotifiedKey = 'vaultcraft_last_notified_date';
+    const today = new Date().toISOString().split('T')[0];
+    const lastNotified = localStorage.getItem(lastNotifiedKey);
+
+    if (lastNotified !== today) {
+      const firstDue = dueTodayInstallments[0];
+      const notified = sendLocalNotification('Savings Reminder 💰', {
+        body: `Time to save! ${firstDue.label} of ${firstDue.currency}${firstDue.amount} for "${firstDue.goalTitle}" is waiting for you.`,
+      });
+      if (notified) {
+        localStorage.setItem(lastNotifiedKey, today);
+      }
+    }
+  }, [notificationSettings.enabled, dueTodayInstallments]);
+
+  // Update notification settings
+  const updateNotificationSettings = useCallback((newSettings) => {
+    setNotifSettingsState(prev => {
+      const merged = { ...prev, ...newSettings };
+      saveNotificationSettings(merged);
+      return merged;
+    });
+  }, []);
+
+  const triggerTestNotification = useCallback(async () => {
+    const perm = await requestNotificationPermission();
+    if (perm === 'granted') {
+      sendLocalNotification('VaultCraft Reminder Active! 🔔', {
+        body: 'Great! You will receive timely reminders when your savings contributions are due.',
+      });
+      updateNotificationSettings({ enabled: true });
+      return true;
+    }
+    return false;
+  }, [updateNotificationSettings]);
 
   // Financial Analytics Calculations with Dual Period Conversion
   const analytics = useMemo(() => {
@@ -257,22 +320,26 @@ export function useSavingsChallenges() {
     playUntickSound();
   }, [activeId]);
 
-  // Delete goal
+  // Delete goal - NOW WORKS FOR ANY GOAL (even if only 1 exists!)
   const deleteGoal = useCallback((idToDelete) => {
-    if (challenges.length <= 1) {
-      alert('You must maintain at least one active savings goal.');
+    if (!idToDelete) return;
+    const targetGoal = challenges.find(c => c.id === idToDelete);
+    const goalTitle = targetGoal ? `"${targetGoal.title}"` : 'this savings goal';
+
+    if (!window.confirm(`Are you sure you want to delete ${goalTitle}? This cannot be undone.`)) {
       return;
     }
-    if (!window.confirm('Are you sure you want to delete this savings goal?')) return;
 
     setChallenges(prev => {
       const remaining = prev.filter(c => c.id !== idToDelete);
       if (activeId === idToDelete) {
-        setActiveId(remaining[0].id);
+        setActiveId(remaining.length > 0 ? remaining[0].id : '');
       }
       return remaining;
     });
-  }, [activeId, challenges.length]);
+
+    playUntickSound();
+  }, [activeId, challenges]);
 
   return {
     challenges,
@@ -287,6 +354,10 @@ export function useSavingsChallenges() {
     setThemeId,
     currentTheme,
     analytics,
+    dueTodayInstallments,
+    notificationSettings,
+    updateNotificationSettings,
+    triggerTestNotification,
     toggleItem,
     updateItem,
     saveNextItem,

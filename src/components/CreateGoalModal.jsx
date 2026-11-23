@@ -8,7 +8,9 @@ import {
   DollarSign, 
   Dices,
   Layers, 
-  ArrowRightLeft 
+  ArrowRightLeft,
+  Sliders,
+  Check
 } from 'lucide-react';
 import { CURRENCY_SYMBOLS, generateChronologicalItems } from '../utils/challengeGenerator';
 import { getDualPeriodInfo } from '../utils/periodConverter';
@@ -26,28 +28,77 @@ const GOAL_CATEGORIES = [
 export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, currentTheme }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Wealth Building');
-  const [targetAmount, setTargetAmount] = useState('20000');
+  const [targetAmount, setTargetAmount] = useState('1000');
   const [currency, setCurrency] = useState('₹');
-  const [durationValue, setDurationValue] = useState('12');
-  const [durationUnit, setDurationUnit] = useState('months'); // 'weeks', 'months', 'days'
-  const [strategy, setStrategy] = useState('equal'); // 'equal', 'gamified_range', 'bubble_matrix', 'step_up'
+  const [durationValue, setDurationValue] = useState('20');
+  const [durationUnit, setDurationUnit] = useState('weeks'); // 'weeks', 'months', 'days'
+  const [strategy, setStrategy] = useState('gamified_range'); // 'equal', 'gamified_range', 'bubble_matrix', 'step_up'
   const [randomSeed, setRandomSeed] = useState(0);
+
+  // Pocket Money Limits state (e.g. ₹10 to ₹30)
+  const [usePocketLimits, setUsePocketLimits] = useState(true);
+  const [minLimit, setMinLimit] = useState('10');
+  const [maxLimit, setMaxLimit] = useState('30');
 
   // Dual Period calculations
   const dualPeriod = useMemo(() => {
     return getDualPeriodInfo(durationValue, durationUnit, targetAmount, currency);
   }, [durationValue, durationUnit, targetAmount, currency]);
 
-  // Dynamic preview calculation with randomizer support
+  // Handle Quick Pocket Limit Presets
+  const applyLimitPreset = (min, max) => {
+    setMinLimit(min.toString());
+    setMaxLimit(max.toString());
+    setUsePocketLimits(true);
+    setStrategy('gamified_range');
+
+    // Auto balance target or duration to make sense
+    const periods = Number(durationValue) || 20;
+    const avg = (min + max) / 2;
+    setTargetAmount(Math.round(periods * avg).toString());
+  };
+
+  // Capacity calculation when pocket limits are on
+  const capacity = useMemo(() => {
+    const periods = Number(durationValue) || 1;
+    const min = Math.max(1, Number(minLimit) || 10);
+    const max = Math.max(min, Number(maxLimit) || 30);
+    const minTotal = periods * min;
+    const maxTotal = periods * max;
+    const currentTarget = Number(targetAmount) || 0;
+
+    const isBelowMin = currentTarget < minTotal;
+    const isAboveMax = currentTarget > maxTotal;
+
+    return {
+      min,
+      max,
+      minTotal,
+      maxTotal,
+      isBelowMin,
+      isAboveMax,
+      suggestedTarget: Math.round(periods * ((min + max) / 2)),
+      suggestedWeeks: currentTarget > 0 ? Math.ceil(currentTarget / ((min + max) / 2)) : periods
+    };
+  }, [durationValue, minLimit, maxLimit, targetAmount]);
+
+  // Dynamic preview calculation with randomizer & pocket limits support
   const preview = useMemo(() => {
     const target = Number(targetAmount) || 0;
     const periods = Number(durationValue) || 1;
 
+    const customLimits = usePocketLimits ? {
+      enabled: true,
+      min: Number(minLimit) || 10,
+      max: Number(maxLimit) || 30,
+    } : null;
+
     const sampleItems = generateChronologicalItems({
       targetAmount: target,
-      periods: Math.min(periods, 12),
+      periods: Math.min(periods, 16),
       durationUnit,
       strategy,
+      customLimits,
       premarkedCount: 0,
       randomSeed
     });
@@ -57,7 +108,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
       sampleItems,
       totalCount: periods
     };
-  }, [targetAmount, durationValue, durationUnit, strategy, currency, randomSeed, dualPeriod]);
+  }, [targetAmount, durationValue, durationUnit, strategy, currency, randomSeed, dualPeriod, usePocketLimits, minLimit, maxLimit]);
 
   if (!isOpen) return null;
 
@@ -69,6 +120,12 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
     e.preventDefault();
     if (!targetAmount || Number(targetAmount) <= 0) return;
 
+    const customLimits = usePocketLimits ? {
+      enabled: true,
+      min: Number(minLimit) || 10,
+      max: Number(maxLimit) || 30,
+    } : null;
+
     onCreateGoal({
       title: title || `${currency}${Number(targetAmount).toLocaleString()} ${durationValue} ${durationUnit} Plan`,
       category,
@@ -77,6 +134,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
       durationValue: Number(durationValue),
       durationUnit,
       strategy,
+      customLimits,
       randomSeed
     });
     onClose();
@@ -95,7 +153,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
               </span>
             </div>
             <h3 className="text-xl font-extrabold text-white mt-0.5">
-              Set Your Target & Timeline
+              Set Your Target & Limits
             </h3>
           </div>
           <button
@@ -118,7 +176,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. 20K in 12 Months, Emergency Fund"
+                placeholder="e.g. Pocket Money Goal, 20K Plan"
                 className="w-full bg-[#182130] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-medium"
               />
             </div>
@@ -136,6 +194,127 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Pocket Limits (Min & Max Rupee Cap, e.g. 10 to 30) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-b from-slate-900 to-[#121927] border border-emerald-500/30 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  Pocket Savings Limit (Min & Max Cap)
+                </span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={usePocketLimits}
+                  onChange={(e) => setUsePocketLimits(e.target.checked)}
+                  className="rounded text-emerald-500 focus:ring-0 bg-slate-800 border-slate-700 w-4 h-4"
+                />
+                <span className="text-xs text-emerald-400 font-semibold">Active</span>
+              </label>
+            </div>
+
+            <p className="text-[11px] text-slate-400 mb-3">
+              Limit each contribution to fit your spare cash (e.g. minimum {currency}10 and maximum {currency}30). Installments will be randomly picked within this limit.
+            </p>
+
+            {usePocketLimits && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Min per {durationUnit.slice(0, -1)}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono font-bold text-xs">
+                        {currency}
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={minLimit}
+                        onChange={(e) => setMinLimit(e.target.value)}
+                        className="w-full bg-[#182130] border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs font-bold font-mono text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Max per {durationUnit.slice(0, -1)}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono font-bold text-xs">
+                        {currency}
+                      </span>
+                      <input
+                        type="number"
+                        min={minLimit}
+                        value={maxLimit}
+                        onChange={(e) => setMaxLimit(e.target.value)}
+                        className="w-full bg-[#182130] border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs font-bold font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Pocket Limit Preset Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-400 font-medium">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => applyLimitPreset(10, 30)}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:border-emerald-400 text-slate-200 font-mono font-bold transition-colors"
+                  >
+                    {currency}10–{currency}30 (Pocket Change)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyLimitPreset(20, 50)}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:border-emerald-400 text-slate-200 font-mono font-bold transition-colors"
+                  >
+                    {currency}20–{currency}50
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyLimitPreset(50, 100)}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:border-emerald-400 text-slate-200 font-mono font-bold transition-colors"
+                  >
+                    {currency}50–{currency}100
+                  </button>
+                </div>
+
+                {/* Capacity warning or Auto-balancer */}
+                {(capacity.isBelowMin || capacity.isAboveMax) && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+                    <span className="text-amber-300 font-bold block mb-1">
+                      Target Capacity Notice:
+                    </span>
+                    <span className="text-slate-300 text-[11px] block">
+                      With {durationValue} {durationUnit} of {currency}{capacity.min}–{currency}{capacity.max}, you can save between {currency}{capacity.minTotal.toLocaleString()} and {currency}{capacity.maxTotal.toLocaleString()}.
+                    </span>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setTargetAmount(capacity.suggestedTarget.toString())}
+                        className="px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-black font-bold text-[10px] transition-colors"
+                      >
+                        Fit Target ({currency}{capacity.suggestedTarget.toLocaleString()})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDurationValue(capacity.suggestedWeeks.toString())}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] transition-colors"
+                      >
+                        Fit Weeks ({capacity.suggestedWeeks} {durationUnit})
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Target Amount & Currency */}
@@ -165,32 +344,14 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                 <input
                   type="number"
                   required
-                  min="50"
-                  step="50"
+                  min="10"
+                  step="10"
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   className="w-full bg-[#182130] border border-slate-700 rounded-xl pl-9 pr-3.5 py-2.5 text-sm font-bold font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
-          </div>
-
-          {/* Quick Target Preset Chips */}
-          <div className="flex flex-wrap gap-2 pt-1">
-            {['5000', '10000', '20000', '50000', '100000'].map(amt => (
-              <button
-                key={amt}
-                type="button"
-                onClick={() => setTargetAmount(amt)}
-                className={`text-xs px-2.5 py-1 rounded-lg border font-mono transition-colors ${
-                  targetAmount === amt
-                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 font-bold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                {currency}{Number(amt).toLocaleString()}
-              </button>
-            ))}
           </div>
 
           {/* Duration & Dual Period Conversion */}
@@ -215,7 +376,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                   max="100"
                   value={durationValue}
                   onChange={(e) => setDurationValue(e.target.value)}
-                  placeholder="e.g. 12"
+                  placeholder="e.g. 20"
                   className="w-full bg-[#182130] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -231,107 +392,26 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                 </select>
               </div>
             </div>
-
-            {/* Equivalent Rate Helper */}
-            <div className="mt-2 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs flex items-center justify-between">
-              <span className="text-slate-400 font-medium">Cadence Breakdown:</span>
-              <span className="font-bold text-emerald-400 font-mono">
-                {dualPeriod.rateComparison}
-              </span>
-            </div>
-          </div>
-
-          {/* Strategy Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-300">
-                Contribution Distribution
-              </label>
-              {strategy === 'gamified_range' && (
-                <button
-                  type="button"
-                  onClick={handleShuffleRandom}
-                  className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 px-2 py-0.5 rounded-md hover:bg-emerald-500/10 transition-colors"
-                >
-                  <Dices className="w-3.5 h-3.5" />
-                  <span>Shuffle Amounts</span>
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setStrategy('equal')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  strategy === 'equal'
-                    ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                    : 'border-slate-800 bg-[#161F2E] text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="font-bold text-white mb-0.5">Equal Installments</div>
-                <div className="text-[10px] text-slate-400">Fixed rate every {durationUnit.slice(0, -1)}</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStrategy('gamified_range')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  strategy === 'gamified_range'
-                    ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                    : 'border-slate-800 bg-[#161F2E] text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="font-bold text-white mb-0.5">Dynamic Random</div>
-                <div className="text-[10px] text-slate-400">Randomized amounts to keep it fun</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStrategy('bubble_matrix')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  strategy === 'bubble_matrix'
-                    ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                    : 'border-slate-800 bg-[#161F2E] text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="font-bold text-white mb-0.5">Mosaic Matrix</div>
-                <div className="text-[10px] text-slate-400">Clean denomination tiles</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setStrategy('step_up')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  strategy === 'step_up'
-                    ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                    : 'border-slate-800 bg-[#161F2E] text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="font-bold text-white mb-0.5">Progressive Step</div>
-                <div className="text-[10px] text-slate-400">Steps up over time</div>
-              </button>
-            </div>
           </div>
 
           {/* Live Preview Sample */}
-          {strategy === 'gamified_range' && preview.sampleItems.length > 0 && (
-            <div className="p-3 rounded-2xl bg-[#090D14] border border-slate-800">
+          {preview.sampleItems.length > 0 && (
+            <div className="p-3.5 rounded-2xl bg-[#090D14] border border-slate-800">
               <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-2">
-                <span>Sample Randomized Installments:</span>
+                <span>Sample Installments ({usePocketLimits ? `${currency}${minLimit}–${currency}${maxLimit}` : 'Generated'}):</span>
                 <button
                   type="button"
                   onClick={handleShuffleRandom}
-                  className="text-emerald-400 hover:underline flex items-center gap-1"
+                  className="text-emerald-400 hover:underline flex items-center gap-1 font-bold"
                 >
-                  <Dices className="w-3 h-3" /> Re-roll
+                  <Dices className="w-3.5 h-3.5" /> Shuffle Amounts
                 </button>
               </div>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-                {preview.sampleItems.slice(0, 6).map(it => (
+                {preview.sampleItems.slice(0, 12).map(it => (
                   <div key={it.id} className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-center">
                     <span className="text-[9px] text-slate-500 block truncate">{it.label}</span>
-                    <span className="text-xs font-mono font-bold text-white">{currency}{it.amount}</span>
+                    <span className="text-xs font-mono font-bold text-emerald-400">{currency}{it.amount}</span>
                   </div>
                 ))}
               </div>
