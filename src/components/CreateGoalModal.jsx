@@ -176,7 +176,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Pocket Money Goal, 20K Plan"
+                placeholder="e.g. My Savings Goal, 20K Plan"
                 className="w-full bg-[#182130] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-medium"
               />
             </div>
@@ -202,7 +202,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-emerald-400" />
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Pocket Savings Limit (Min & Max Cap)
+                  Savings Limit Range (Min & Max Cap)
                 </span>
               </div>
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -268,7 +268,7 @@ export default function CreateGoalModal({ isOpen, onClose, onCreateGoal, current
                     onClick={() => applyLimitPreset(10, 30)}
                     className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:border-emerald-400 text-slate-200 font-mono font-bold transition-colors"
                   >
-                    {currency}10–{currency}30 (Pocket Change)
+                    {currency}10–{currency}30
                   </button>
                   <button
                     type="button"

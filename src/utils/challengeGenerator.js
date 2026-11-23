@@ -301,7 +301,7 @@ export function generateCustomChallenge({
   let subtitle = '';
 
   if (customLimits && customLimits.enabled) {
-    subtitle = `${periodInfo.badgeText} • Pocket Cap ${currency}${customLimits.min}–${currency}${customLimits.max} per ${durationUnit.slice(0, -1)}`;
+    subtitle = `${periodInfo.badgeText} • Limit ${currency}${customLimits.min}–${currency}${customLimits.max} per ${durationUnit.slice(0, -1)}`;
   } else if (strategy === 'equal') {
     subtitle = `${periodInfo.badgeText} • ${periodInfo.rateComparison}`;
   } else {

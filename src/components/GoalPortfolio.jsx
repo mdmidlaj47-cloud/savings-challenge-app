@@ -138,7 +138,7 @@ export default function GoalPortfolio({
             Create Another Goal
           </span>
           <span className="text-xs text-slate-400 max-w-[200px] mt-1">
-            Vacation, Pocket Money, Tech upgrade, or Emergency reserve
+            Vacation, Personal Target, Tech upgrade, or Emergency reserve
           </span>
         </button>
       </div>
