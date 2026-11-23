@@ -3,12 +3,33 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     margin: 0;
     padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    min-height: 100vh;
   }
 
   input, select, textarea {
@@ -17,10 +38,19 @@
   }
 }
 
+/* Hide scrollbar for tabs while keeping scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Custom Scrollbar for sleek dark mode */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: rgba(10, 14, 20, 0.6);
@@ -33,13 +63,7 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Print styling for Paper mode */
-@media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  header, .print\:hidden {
-    display: none !important;
-  }
+/* iOS Safe Area Padding */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }

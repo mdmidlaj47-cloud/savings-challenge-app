@@ -49,7 +49,7 @@ export default function App() {
   const firstDue = hasDueToday ? dueTodayInstallments[0] : null;
 
   return (
-    <div className="min-h-screen bg-[#070A0F] text-slate-100 font-sans selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#070A0F] text-slate-100 font-sans selection:bg-emerald-500 selection:text-black">
       {/* Top Application Navbar */}
       <Navbar
         challenges={challenges}
@@ -69,25 +69,25 @@ export default function App() {
 
       {/* Due Today Interactive Banner */}
       {hasDueToday && !dismissDueBanner && (
-        <div className="bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-teal-500/15 border-b border-amber-500/20 px-4 py-2.5">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 truncate">
+        <div className="bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-teal-500/15 border-b border-amber-500/20 px-3 sm:px-4 py-2 w-full overflow-hidden">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 truncate min-w-0">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
-              <span className="text-slate-300 truncate">
-                <strong className="text-white">Savings Reminder:</strong> {firstDue.label} of <strong className="text-emerald-400 font-mono">{firstDue.currency}{firstDue.amount}</strong> for "{firstDue.goalTitle}" is waiting today!
+              <span className="text-slate-300 truncate text-[11px] sm:text-xs">
+                <strong className="text-white">Due Today:</strong> {firstDue.label} of <strong className="text-emerald-400 font-mono">{firstDue.currency}{firstDue.amount}</strong> for "{firstDue.goalTitle}"
               </span>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 onClick={() => toggleItem(firstDue.itemId)}
-                className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-[11px] transition-all"
+                className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-[10px] sm:text-[11px] transition-all"
               >
-                Deposit Now
+                Deposit
               </button>
               <button
                 onClick={() => setDismissDueBanner(true)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-0.5"
                 title="Dismiss banner"
               >
                 <X className="w-3.5 h-3.5" />
@@ -98,7 +98,7 @@ export default function App() {
       )}
 
       {/* Main Container */}
-      <main className="w-full">
+      <main className="w-full max-w-full overflow-x-hidden">
         {activeChallenge ? (
           <>
             {/* Executive Hero Banner & KPI Stats */}
@@ -143,19 +143,19 @@ export default function App() {
           </>
         ) : (
           /* Empty State for Fresh Users or when all goals deleted */
-          <div className="max-w-xl mx-auto px-4 py-24 text-center">
+          <div className="max-w-xl mx-auto px-4 py-20 sm:py-24 text-center">
             <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Welcome to VaultCraft
             </h2>
-            <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+            <p className="text-slate-400 text-xs sm:text-sm mt-2 max-w-md mx-auto">
               You currently have no active savings goals. Build financial momentum by creating your own customized savings plan.
             </p>
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all"
+              className="mt-6 sm:mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all"
             >
               <Plus className="w-5 h-5 stroke-[2.5]" />
               Create Your Goal
@@ -166,19 +166,19 @@ export default function App() {
 
       {/* Sticky Mobile Quick Save Bar */}
       {activeChallenge && activeTab !== 'overview' && analytics.nextDueItem && (
-        <div className="fixed bottom-0 left-0 right-0 sm:hidden p-3 bg-[#0A0E17]/95 backdrop-blur-xl border-t border-slate-800 z-30">
+        <div className="fixed bottom-0 left-0 right-0 sm:hidden p-3 bg-[#0A0E17]/95 backdrop-blur-xl border-t border-slate-800 z-30 pb-safe w-full max-w-full overflow-hidden">
           <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
-            <div>
-              <span className="text-[10px] text-slate-400 block font-medium">Banked so far</span>
-              <span className="text-lg font-extrabold text-emerald-400 font-mono leading-tight">
+            <div className="min-w-0">
+              <span className="text-[9px] text-slate-400 block font-medium">Banked so far</span>
+              <span className="text-base sm:text-lg font-extrabold text-emerald-400 font-mono leading-tight truncate block">
                 {currency}{analytics.totalSaved?.toLocaleString()}
               </span>
             </div>
             <button
               onClick={saveNextItem}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-xs shadow-[0_0_15px_rgba(16,185,129,0.4)] active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-xs shadow-[0_0_15px_rgba(16,185,129,0.4)] active:scale-95 flex-shrink-0"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5" />
               Deposit Next ({currency}{analytics.nextDueItem?.amount?.toLocaleString()})
             </button>
           </div>

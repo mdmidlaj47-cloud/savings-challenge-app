@@ -47,45 +47,45 @@ export default function Navbar({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#090D14]/85 border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#090D14]/90 border-b border-slate-800/80">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-15 sm:h-16 flex items-center justify-between gap-2">
         
         {/* Brand & Active Goal Selector */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 shadow-[0_0_15px_rgba(16,185,129,0.35)] flex items-center justify-center">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 shadow-[0_0_12px_rgba(16,185,129,0.35)] flex items-center justify-center">
               <div className="w-full h-full bg-[#090D14] rounded-[10px] flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               </div>
             </div>
-            <div className="hidden sm:block">
-              <span className="text-base font-extrabold tracking-tight text-white block leading-none">
+            <div className="hidden md:block">
+              <span className="text-sm sm:text-base font-extrabold tracking-tight text-white block leading-none">
                 Vault<span className="text-emerald-400">Craft</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">
-                Smart Savings Engine
+              <span className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">
+                Savings Engine
               </span>
             </div>
           </div>
 
-          <div className="h-6 w-px bg-slate-800 hidden sm:block" />
+          <div className="h-5 w-px bg-slate-800 hidden sm:block flex-shrink-0" />
 
           {/* Goal Selector Dropdown */}
-          <div className="relative">
+          <div className="relative min-w-0">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 text-xs font-semibold text-slate-200 transition-all hover:border-slate-700 shadow-sm"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 text-xs font-semibold text-slate-200 transition-all hover:border-slate-700 shadow-sm max-w-[150px] sm:max-w-[220px]"
             >
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <div className="text-left">
-                <span className="block font-bold text-white max-w-[130px] sm:max-w-[200px] truncate leading-tight">
-                  {activeChallenge?.title || 'No Goal (Tap + to Create)'}
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+              <div className="text-left min-w-0 flex-1">
+                <span className="block font-bold text-white text-[11px] sm:text-xs truncate leading-tight">
+                  {activeChallenge?.title || 'No Goal (Tap +)'}
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
+                <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono block truncate">
                   {activeChallenge ? `${activeChallenge.currency}${activeChallenge.targetAmount?.toLocaleString()}` : '0 active'}
                 </span>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
+              <ChevronDown className="w-3 h-3 text-slate-400 flex-shrink-0 ml-0.5" />
             </button>
 
             {dropdownOpen && (
@@ -123,7 +123,6 @@ export default function Navbar({
                             </span>
                           </button>
 
-                          {/* Quick delete from dropdown */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -131,7 +130,7 @@ export default function Navbar({
                               onDeleteGoal(ch.id);
                             }}
                             title="Delete this goal"
-                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg opacity-60 group-hover:opacity-100 transition-opacity"
+                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg opacity-80 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -165,16 +164,16 @@ export default function Navbar({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Notifications / Reminders Button */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+          {/* Notifications Button */}
           <button
             onClick={onOpenNotifications}
             title="Savings Reminders & Notifications"
-            className="relative w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
+            className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
           >
-            <Bell className="w-4 h-4 text-slate-300 hover:text-white" />
+            <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300 hover:text-white" />
             {hasDueNotifications && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#090D14] animate-pulse" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#090D14] animate-pulse" />
             )}
           </button>
 
@@ -183,9 +182,9 @@ export default function Navbar({
             <button
               onClick={() => setThemeOpen(!themeOpen)}
               title="Change Theme Palette"
-              className="w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
             >
-              <Palette className="w-4 h-4 text-emerald-400" />
+              <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
             </button>
 
             {themeOpen && (
@@ -225,11 +224,11 @@ export default function Navbar({
             )}
           </div>
 
-          {/* Sound Toggle */}
+          {/* Sound Toggle (Visible on desktop) */}
           <button
             onClick={onToggleSound}
             title={soundEnabled ? 'Disable sound feedback' : 'Enable sound feedback'}
-            className="w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
+            className="hidden sm:flex w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 items-center justify-center text-slate-300 transition-colors"
           >
             {soundEnabled ? (
               <Volume2 className="w-4 h-4 text-emerald-400" />
@@ -241,7 +240,7 @@ export default function Navbar({
           {/* New Goal Primary Button */}
           <button
             onClick={onOpenCreate}
-            className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black text-xs font-extrabold tracking-wide transition-all shadow-[0_0_18px_rgba(16,185,129,0.3)] active:scale-95"
+            className="flex items-center justify-center gap-1.5 w-8 h-8 sm:w-auto sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black text-xs font-extrabold tracking-wide transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline">New Goal</span>
@@ -251,15 +250,36 @@ export default function Navbar({
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 transition-colors"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                 <div className="absolute right-0 mt-2 w-52 bg-[#0F1522] border border-slate-800 rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in duration-100">
+                  {/* Sound Toggle for Mobile */}
+                  <button
+                    onClick={() => {
+                      onToggleSound();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left text-xs text-slate-300 hover:bg-slate-800 flex items-center gap-2.5 sm:hidden"
+                  >
+                    {soundEnabled ? (
+                      <>
+                        <Volume2 className="w-4 h-4 text-emerald-400" />
+                        <span>Sound: Enabled</span>
+                      </>
+                    ) : (
+                      <>
+                        <VolumeX className="w-4 h-4 text-slate-500" />
+                        <span>Sound: Muted</span>
+                      </>
+                    )}
+                  </button>
+
                   <button
                     onClick={() => {
                       setMenuOpen(false);
